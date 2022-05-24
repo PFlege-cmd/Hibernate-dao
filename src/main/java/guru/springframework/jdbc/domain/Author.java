@@ -4,7 +4,15 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 
+@NamedQueries({
+        @NamedQuery(name = "find_all_authors", query = "FROM Author"),
+        @NamedQuery(name = "find_author_by_name", query = "SELECT a from Author a "
+                + "where :first_name = a.firstName "
+                + "and :last_name = a.lastName")
+})
 @Entity
 public class Author {
 

@@ -1,17 +1,21 @@
 package guru.springframework.jdbc;
 
-import guru.springframework.jdbc.dao.AuthorDao;
-import guru.springframework.jdbc.domain.Author;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import java.util.List;
+
+import org.assertj.core.internal.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.test.context.ActiveProfiles;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import guru.springframework.jdbc.dao.AuthorDao;
+import guru.springframework.jdbc.dao.BookDao;
+import guru.springframework.jdbc.domain.Author;
+import guru.springframework.jdbc.domain.Book;
 
 /**
  * Created by jt on 8/28/21.
@@ -24,74 +28,115 @@ public class DaoIntegrationTest {
     @Autowired
     AuthorDao authorDao;
 
-//    @Autowired
-//    BookDao bookDao;
-//
-//    @Test
-//    void testDeleteBook() {
-//        Book book = new Book();
-//        book.setIsbn("1234");
-//        book.setPublisher("Self");
-//        book.setTitle("my book");
-//        Book saved = bookDao.saveNewBook(book);
-//
-//        bookDao.deleteBookById(saved.getId());
-//
-//        Book deleted = bookDao.getById(saved.getId());
-//
-//        assertThat(deleted).isNull();
-//    }
-//
-//    @Test
-//    void updateBookTest() {
-//        Book book = new Book();
-//        book.setIsbn("1234");
-//        book.setPublisher("Self");
-//        book.setTitle("my book");
-//
-//        Author author = new Author();
-//        author.setId(3L);
-//
-//        book.setAuthor(author);
-//        Book saved = bookDao.saveNewBook(book);
-//
-//        saved.setTitle("New Book");
-//        bookDao.updateBook(saved);
-//
-//        Book fetched = bookDao.getById(saved.getId());
-//
-//        assertThat(fetched.getTitle()).isEqualTo("New Book");
-//    }
-//
-//    @Test
-//    void testSaveBook() {
-//        Book book = new Book();
-//        book.setIsbn("1234");
-//        book.setPublisher("Self");
-//        book.setTitle("my book");
-//
-//        Author author = new Author();
-//        author.setId(3L);
-//
-//        book.setAuthor(author);
-//        Book saved = bookDao.saveNewBook(book);
-//
-//        assertThat(saved).isNotNull();
-//    }
-//
-//    @Test
-//    void testGetBookByName() {
-//        Book book = bookDao.findBookByTitle("Clean Code");
-//
-//        assertThat(book).isNotNull();
-//    }
-//
-//    @Test
-//    void testGetBook() {
-//        Book book = bookDao.getById(3L);
-//
-//        assertThat(book.getId()).isNotNull();
-//    }
+    @Autowired
+    BookDao bookDao;
+
+    @Test
+    void findAllBooks(){
+
+        List<Book> books = bookDao.findAll();
+
+        assertThat(books).isNotNull();
+        assertThat(books.size()).isGreaterThan(0);
+    }
+
+    @Test
+    void testFindBookByISBN(){
+        Book book = new Book();
+        String randomISBN = "1234" + RandomString.make();
+        book.setIsbn(randomISBN);
+
+        bookDao.saveNewBook(book);
+
+        Book fetched = bookDao.findBookByISBN(randomISBN);
+
+        assertThat(fetched).isNotNull();
+        assertThat(fetched.getIsbn()).isEqualTo(randomISBN);
+        assertThat(fetched).isEqualTo(book);
+    }
+
+    @Test
+    void testDeleteBook() {
+        Book book = new Book();
+        book.setIsbn("1234");
+        book.setPublisher("Self");
+        book.setTitle("my book");
+        Book saved = bookDao.saveNewBook(book);
+
+        bookDao.deleteBookById(saved.getId());
+
+        Book deleted = bookDao.getById(saved.getId());
+
+        assertThat(deleted).isNull();
+    }
+
+    @Test
+    void updateBookTest() {
+        Book book = new Book();
+        book.setIsbn("1234");
+        book.setPublisher("Self");
+        book.setTitle("my book");
+
+        Author author = new Author();
+        author.setId(3L);
+
+        book.setAuthor(author);
+        Book saved = bookDao.saveNewBook(book);
+
+        saved.setTitle("New Book");
+        bookDao.updateBook(saved);
+
+        Book fetched = bookDao.getById(saved.getId());
+
+        assertThat(fetched).isNotNull();
+        assertThat(fetched.getTitle()).isEqualTo("New Book");
+    }
+
+    @Test
+    void testSaveBook() {
+        Book book = new Book();
+        book.setIsbn("1234");
+        book.setPublisher("Self");
+        book.setTitle("my book");
+
+        Author author = new Author();
+        author.setId(3L);
+
+        book.setAuthor(author);
+        Book saved = bookDao.saveNewBook(book);
+
+        assertThat(saved).isNotNull();
+    }
+
+    @Test
+    void testFindBookByTitle() {
+        Book book = bookDao.findBookByTitle("Clean Code");
+
+        assertThat(book).isNotNull();
+    }
+
+    @Test
+    void testGetBook() {
+        Book book = bookDao.getById(3L);
+
+        assertThat(book.getId()).isNotNull();
+    }
+
+    @Test
+    void testFindAll(){
+        List<Author> authors = authorDao.findAll();
+
+        assertThat(authors.size()).isGreaterThan(0);
+    }
+
+    @Test
+    void testFindAuthorByLastNameLike(){
+
+        List<Author> authors = authorDao.findAuthorListByLastNameLike("Walls");
+
+        assertThat(authors).isNotNull();
+        assertThat(authors.size()).isGreaterThan(0);
+    }
 
     @Test
     void testDeleteAuthor() {
@@ -101,11 +146,10 @@ public class DaoIntegrationTest {
 
         Author saved = authorDao.saveNewAuthor(author);
 
-        authorDao.deleteAuthorById(saved.getId());
+        Long savedId = saved.getId();
+        authorDao.deleteAuthorById(savedId);
 
-        assertThrows(EmptyResultDataAccessException.class, () -> {
-            Author deleted = authorDao.getById(saved.getId());
-        });
+        assertThat(authorDao.getById(savedId)).isNull();
 
     }
 
@@ -131,13 +175,16 @@ public class DaoIntegrationTest {
         Author saved = authorDao.saveNewAuthor(author);
 
         assertThat(saved).isNotNull();
+        assertThat(saved.getId()).isNotNull();
     }
 
     @Test
-    void testGetAuthorByName() {
+    void testFindAuthorByName() {
         Author author = authorDao.findAuthorByName("Craig", "Walls");
 
         assertThat(author).isNotNull();
+        assertThat(author.getFirstName()).isEqualTo("Craig");
+        assertThat(author.getLastName()).isEqualTo("Walls");
     }
 
     @Test

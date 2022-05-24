@@ -4,9 +4,18 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+
 import java.util.Objects;
 
+import lombok.NoArgsConstructor;
+
 @Entity
+@NamedQueries({
+        @NamedQuery(name="find_all_books", query = "FROM Book"),
+        @NamedQuery(name="find_book_by_title", query = "SELECT b from Book b where b.title = :taitoru")
+})
 public class Book {
 
     @Id
@@ -81,5 +90,9 @@ public class Book {
 
     public void setAuthorId(Long authorId) {
         this.authorId = authorId;
+    }
+
+    public void setAuthor(Author author) {
+        this.authorId = author.getId();
     }
 }
