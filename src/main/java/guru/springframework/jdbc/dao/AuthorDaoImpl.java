@@ -1,11 +1,17 @@
 package guru.springframework.jdbc.dao;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.ParameterExpression;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 
 import guru.springframework.jdbc.domain.Author;
 import org.springframework.stereotype.Component;
@@ -67,6 +73,37 @@ public class AuthorDaoImpl implements AuthorDao {
 
         em.close();
         return author;
+    }
+
+    @Override public Author findAuthorByNameCriteria(String firstName, String lastName) {
+        EntityManager em = getEntityManager();
+
+        try {
+            CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+
+            CriteriaQuery<Author> criteriaQuery = criteriaBuilder.createQuery(Author.class);
+            Root<Author> root = criteriaQuery.from(Author.class);
+
+            ParameterExpression<String> firstNameParam = criteriaBuilder.parameter(String.class, "firstName");
+            ParameterExpression<String> lastNameParam = criteriaBuilder.parameter(String.class, "lastName");
+
+            Predicate predicateFirstName = criteriaBuilder.equal(root.get("firstName"), firstNameParam);
+            Predicate predicateLastName = criteriaBuilder.equal(root.get("lastName"), lastNameParam);
+
+            criteriaQuery.select(root).where(criteriaBuilder.and(predicateFirstName, predicateLastName));
+
+            TypedQuery<Author> typedQuery = em.createQuery(criteriaQuery);
+
+            typedQuery.setParameter("firstName", firstName);
+            typedQuery.setParameter("lastName", lastName);
+
+            Author author = typedQuery.getSingleResult();
+
+            return author;
+        } finally {
+            em.close();
+        }
+
     }
 
     @Override

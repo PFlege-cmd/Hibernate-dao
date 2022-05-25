@@ -1,14 +1,19 @@
 package guru.springframework.jdbc.dao;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.ParameterExpression;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 
 import org.springframework.stereotype.Component;
 
-import guru.springframework.jdbc.domain.Author;
 import guru.springframework.jdbc.domain.Book;
 
 @Component
@@ -26,8 +31,7 @@ public class BookDaoImpl implements BookDao{
 
         try {
             TypedQuery<Book> typedQuery = em.createNamedQuery("find_all_books", Book.class);
-            List<Book> bookList = typedQuery.getResultList();
-            return bookList;
+            return typedQuery.getResultList();
         } finally {
             em.close();
         }
@@ -40,8 +44,7 @@ public class BookDaoImpl implements BookDao{
             em.joinTransaction();
             TypedQuery<Book> typedQuery = em.createQuery("SELECT b from Book b where b.isbn = :isbn", Book.class);
             typedQuery.setParameter("isbn", isbn);
-            Book book = typedQuery.getSingleResult();
-            return book;
+            return typedQuery.getSingleResult();
 
         } finally {
             em.close();
@@ -65,6 +68,29 @@ public class BookDaoImpl implements BookDao{
         em.close();
 
         return book;
+    }
+
+    @Override public Book findBookByTitleCriteria(String title) {
+        EntityManager em = getEntityManager();
+
+        try {
+            CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+            CriteriaQuery<Book> criteriaQuery = criteriaBuilder.createQuery(Book.class);
+
+            Root<Book> root = criteriaQuery.from(Book.class);
+
+            ParameterExpression<String> titleParam = criteriaBuilder.parameter(String.class, "title");
+            Predicate titlePredicate =  criteriaBuilder.equal(root.get("title"), titleParam);
+            criteriaQuery.select(root).where(titlePredicate);
+
+            TypedQuery<Book> typedQuery = em.createQuery(criteriaQuery);
+            typedQuery.setParameter("title", title);
+
+            return typedQuery.getSingleResult();
+        } finally {
+            em.close();
+        }
+
     }
 
     @Override public Book saveNewBook(Book book) {
